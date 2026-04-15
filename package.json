@@ -1,0 +1,66 @@
+{
+  "name": "tradrs",
+  "version": "1.0.0",
+  "description": "TRADRS — Predictions Markets Algo Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64",
+    "dist:mac": "electron-builder --mac"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.tradrs.app",
+    "productName": "TRADRS Predictions Markets Algo",
+    "copyright": "Elegant Hospitality LLC",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "C:/Users/danbe/OneDrive/Desktop/kalshi_trader_final/kalshi_trader",
+        "to": "app",
+        "filter": [
+          "Kalshi_dashboard.exe",
+          "Kalshi_dashboard",
+          "static/**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc",
+          "!**/*.pem",
+          "!**/*.py",
+          "!**/.git/**",
+          "!**/auth.json",
+          "!**/settings.json",
+          "!**/polymarket_settings.json",
+          "!**/pnl_history.json",
+          "!**/.env",
+          "!**/*.key",
+          "!**/*.p12",
+          "!**/*.pfx",
+          "!**/.venv/**"
+        ]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "author": "Elegant Hospitality LLC",
+  "license": "MIT"
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="48" fill="#0a0e14"/>
+  <path d="M60 180 L100 100 L128 140 L160 80 L196 180" fill="none" stroke="#00e5ff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="60" cy="180" r="5" fill="#00e5ff"/>
+  <circle cx="100" cy="100" r="5" fill="#00e5ff"/>
+  <circle cx="128" cy="140" r="5" fill="#00e5ff"/>
+  <circle cx="160" cy="80" r="5" fill="#00e5ff"/>
+  <circle cx="196" cy="180" r="5" fill="#00e5ff"/>
+  <text x="128" y="220" text-anchor="middle" font-family="monospace" font-size="20" font-weight="bold" fill="#00e5ff" letter-spacing="4">KALSHI</text>
+</svg>
