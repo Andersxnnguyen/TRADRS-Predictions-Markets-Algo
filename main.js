@@ -7,23 +7,36 @@ const path  = require("path");
 const { spawn } = require("child_process");
 const fs    = require("fs");
 const http  = require("http");
+// electron-updater only works in a packaged app — lazy-load it to avoid dev crashes
+let autoUpdater = null;
+if (app.isPackaged) {
+  try { autoUpdater = require("electron-updater").autoUpdater; } catch(e) {}
+}
 
 const PORT      = 5050;
 const FLASK_URL = `http://127.0.0.1:${PORT}`;
+const IS_WIN    = process.platform === "win32";
+const IS_MAC    = process.platform === "darwin";
 
 // ── Path resolution — works both in dev and packaged (electron-builder) ──────
 // When packaged, extra files land in process.resourcesPath/app/
 // When in dev, __dirname is the project root.
-const IS_PACKED = app.isPackaged;
+const IS_PACKED   = app.isPackaged;
+const DEV_PY_ROOT = IS_WIN
+  ? "C:\\Users\\danbe\\OneDrive\\Desktop\\kalshi_trader_final\\kalshi_trader"
+  : path.join(require("os").homedir(), "kalshi_trader_final", "kalshi_trader");
 const APP_ROOT  = IS_PACKED
   ? path.join(process.resourcesPath, "app")   // packaged: resources/app/
-  : path.join("C:\\Users\\danbe\\OneDrive\\Desktop\\kalshi_trader_final\\kalshi_trader"); // dev fallback
+  : DEV_PY_ROOT;                              // dev fallback
 
-// Prefer compiled exe (PyInstaller), fall back to Python script in dev
-const FLASK_EXE  = path.join(APP_ROOT, "Kalshi_dashboard.exe");   // Windows packaged
-const FLASK_BIN  = path.join(APP_ROOT, "Kalshi_dashboard");        // macOS/Linux packaged
+// Prefer compiled binary (PyInstaller), fall back to Python script in dev
+const FLASK_EXE  = path.join(APP_ROOT, "TRADRS_Predictions_Markets_Algo.exe");  // Windows packaged
+const FLASK_BIN  = path.join(APP_ROOT, "TRADRS_Predictions_Markets_Algo");       // macOS/Linux packaged
 const FLASK_PY   = path.join(APP_ROOT, "Kalshi_dashboard.py");
-const FLASK_VENV = path.join(APP_ROOT, ".venv", "Scripts", "pythonw.exe");
+// Dev fallback: platform-appropriate Python interpreter
+const FLASK_VENV = IS_WIN
+  ? path.join(APP_ROOT, ".venv", "Scripts", "python.exe")
+  : path.join(APP_ROOT, ".venv", "bin", "python3");
 const FLASK_CWD  = APP_ROOT;
 
 const USE_EXE    = fs.existsSync(FLASK_EXE);
@@ -110,13 +123,55 @@ fs.writeFileSync(SPLASH_HTML, `<!DOCTYPE html><html><head>
   </div>
 </body></html>`);
 
+// ── Kill Flask process tree (handles PyInstaller onefile child processes) ──
+function killFlask() {
+  const pid = flaskProcess ? flaskProcess.pid : null;
+  flaskProcess = null;
+  if (IS_WIN) {
+    // Windows: taskkill kills the process tree
+    if (pid) {
+      try { spawn("taskkill", ["/F", "/T", "/PID", String(pid)], { windowsHide: true }); } catch(e) {}
+    }
+    try { spawn("taskkill", ["/F", "/IM", "TRADRS_Predictions_Markets_Algo.exe"], { windowsHide: true }); } catch(e) {}
+  } else {
+    // macOS/Linux: kill process group
+    if (pid) {
+      try { process.kill(-pid, "SIGKILL"); } catch(e) {}
+      try { spawn("kill", ["-9", String(pid)]); } catch(e) {}
+    }
+    try { spawn("pkill", ["-f", "TRADRS_Predictions_Markets_Algo"]); } catch(e) {}
+  }
+}
+
 // ── Window control IPC ────────────────────────────────────────────────────
 ipcMain.on("win-minimize", () => { if (mainWindow) mainWindow.minimize(); });
 ipcMain.on("win-maximize", () => {
   if (!mainWindow) return;
   mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
 });
-ipcMain.on("win-close", () => { if (mainWindow) mainWindow.close(); });
+ipcMain.on("win-close",    () => { if (mainWindow) mainWindow.close(); });
+ipcMain.on("win-shutdown", () => {
+  killFlask();
+  app.quit();
+});
+ipcMain.on("win-restart",  () => {
+  killFlask();
+  app.relaunch();
+  app.exit(0);
+});
+
+// ── Auto-updater IPC (packaged only) ─────────────────────────────────────
+ipcMain.on("updater-check",       () => autoUpdater && autoUpdater.checkForUpdates());
+ipcMain.on("updater-install-now", () => autoUpdater && autoUpdater.quitAndInstall(false, true));
+
+if (autoUpdater) {
+  autoUpdater.autoDownload        = true;
+  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.on("update-available",  (info)     => { if (mainWindow) mainWindow.webContents.send("update-available",  info); });
+  autoUpdater.on("download-progress", (progress) => { if (mainWindow) mainWindow.webContents.send("update-progress",  progress); });
+  autoUpdater.on("update-downloaded", (info)     => { if (mainWindow) mainWindow.webContents.send("update-downloaded", info); });
+  autoUpdater.on("error",             (err)      => { if (mainWindow) mainWindow.webContents.send("update-error",      err.message); });
+}
 
 // ── Poll until Flask answers ──────────────────────────────────────────────
 function waitForFlask(maxMs, cb) {
@@ -164,13 +219,18 @@ function createMain() {
     title: "TRADRS Predictions Markets Algo",
   });
   mainWindow.loadURL(FLASK_URL);
-  mainWindow.once("ready-to-show", () => { mainWindow.show(); mainWindow.focus(); });
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show();
+    mainWindow.focus();
+    // Check for updates 5s after window is shown (only in packaged app)
+    if (app.isPackaged && autoUpdater) setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+  });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url); return { action: "deny" };
   });
   mainWindow.on("closed", () => {
     mainWindow = null;
-    if (flaskProcess) { try { flaskProcess.kill(); } catch(e){} flaskProcess = null; }
+    killFlask();
   });
 }
 
@@ -218,7 +278,7 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (flaskProcess) { try { flaskProcess.kill(); } catch(e){} flaskProcess = null; }
+  killFlask();
   app.quit();
 });
 

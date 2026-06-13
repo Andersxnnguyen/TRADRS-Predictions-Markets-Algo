@@ -1,6 +1,6 @@
 {
   "name": "tradrs",
-  "version": "1.0.0",
+  "version": "1.1.6",
   "description": "TRADRS — Predictions Markets Algo Desktop App",
   "main": "main.js",
   "scripts": {
@@ -8,7 +8,9 @@
     "dist": "electron-builder --win --x64",
     "dist:mac": "electron-builder --mac"
   },
-  "dependencies": {},
+  "dependencies": {
+    "electron-updater": "^6.8.3"
+  },
   "devDependencies": {
     "electron": "^28.3.3",
     "electron-builder": "^24.9.1"
@@ -16,7 +18,7 @@
   "build": {
     "appId": "com.tradrs.app",
     "productName": "TRADRS Predictions Markets Algo",
-    "copyright": "Elegant Hospitality LLC",
+    "copyright": "TRADRS Inc",
     "directories": {
       "output": "dist"
     },
@@ -27,40 +29,59 @@
     ],
     "extraResources": [
       {
-        "from": "C:/Users/danbe/OneDrive/Desktop/kalshi_trader_final/kalshi_trader",
-        "to": "app",
-        "filter": [
-          "Kalshi_dashboard.exe",
-          "Kalshi_dashboard",
-          "static/**/*",
-          "!**/__pycache__/**",
-          "!**/*.pyc",
-          "!**/*.pem",
-          "!**/*.py",
-          "!**/.git/**",
-          "!**/auth.json",
-          "!**/settings.json",
-          "!**/polymarket_settings.json",
-          "!**/pnl_history.json",
-          "!**/.env",
-          "!**/*.key",
-          "!**/*.p12",
-          "!**/*.pfx",
-          "!**/.venv/**"
-        ]
+        "from": "C:/Users/danbe/OneDrive/Desktop/kalshi_trader_final/kalshi_trader/dist/TRADRS_Predictions_Markets_Algo.exe",
+        "to": "app/TRADRS_Predictions_Markets_Algo.exe",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "dist_mac/TRADRS_Predictions_Markets_Algo",
+        "to": "app/TRADRS_Predictions_Markets_Algo",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "C:/Users/danbe/OneDrive/Desktop/kalshi_trader_final/kalshi_trader/static",
+        "to": "app/static"
       }
     ],
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.ico"
+      "icon": "assets/icon.ico",
+      "artifactName": "TRADRS-Setup-${version}.exe"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] }
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.finance",
+      "artifactName": "TRADRS-${version}-mac-${arch}.dmg",
+      "extraResources": [
+        {
+          "from": "dist_mac/TRADRS_Predictions_Markets_Algo",
+          "to": "app/TRADRS_Predictions_Markets_Algo"
+        },
+        {
+          "from": "static",
+          "to": "app/static"
+        }
+      ]
+    },
+    "dmg": {
+      "title": "TRADRS Predictions Markets Algo",
+      "window": { "width": 540, "height": 380 }
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Andersxnnguyen",
+      "repo": "TRADRS-Predictions-Markets-Algo"
     }
   },
-  "author": "Elegant Hospitality LLC",
+  "author": "TRADRS Inc",
   "license": "MIT"
 }
