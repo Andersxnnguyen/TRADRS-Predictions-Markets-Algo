@@ -7,7 +7,7 @@ const path  = require("path");
 const { spawn } = require("child_process");
 const fs    = require("fs");
 const http  = require("http");
-// electron-updater only works in a packaged app — lazy-load it to avoid dev crashes
+// electron-updater only works in a packaged app — lazy-load to avoid dev crashes
 let autoUpdater = null;
 if (app.isPackaged) {
   try { autoUpdater = require("electron-updater").autoUpdater; } catch(e) {}
@@ -19,19 +19,19 @@ const IS_WIN    = process.platform === "win32";
 const IS_MAC    = process.platform === "darwin";
 
 // ── Path resolution — works both in dev and packaged (electron-builder) ──────
-// When packaged, extra files land in process.resourcesPath/app/
-// When in dev, __dirname is the project root.
-const IS_PACKED   = app.isPackaged;
-const DEV_PY_ROOT = IS_WIN
-  ? "C:\\Users\\danbe\\OneDrive\\Desktop\\kalshi_trader_final\\kalshi_trader"
-  : path.join(require("os").homedir(), "kalshi_trader_final", "kalshi_trader");
+// Packaged: extraResources land in process.resourcesPath/app/
+// Dev Mac:  PyInstaller flat dist at dist_mac/TRADRS_Predictions_Markets_Algo/
+// Dev Win:  hardcoded path to kalshi_trader source
+const IS_PACKED = app.isPackaged;
 const APP_ROOT  = IS_PACKED
-  ? path.join(process.resourcesPath, "app")   // packaged: resources/app/
-  : DEV_PY_ROOT;                              // dev fallback
+  ? path.join(process.resourcesPath, "app")
+  : IS_MAC
+    ? path.join(__dirname, "dist_mac", "TRADRS_Predictions_Markets_Algo")
+    : "C:\\Users\\danbe\\OneDrive\\Desktop\\kalshi_trader_final\\kalshi_trader";
 
 // Prefer compiled binary (PyInstaller), fall back to Python script in dev
-const FLASK_EXE  = path.join(APP_ROOT, "TRADRS_Predictions_Markets_Algo.exe");  // Windows packaged
-const FLASK_BIN  = path.join(APP_ROOT, "TRADRS_Predictions_Markets_Algo");       // macOS/Linux packaged
+const FLASK_EXE  = path.join(APP_ROOT, "TRADRS_Predictions_Markets_Algo.exe"); // Windows packaged
+const FLASK_BIN  = path.join(APP_ROOT, "TRADRS_Predictions_Markets_Algo");      // macOS packaged/dev
 const FLASK_PY   = path.join(APP_ROOT, "Kalshi_dashboard.py");
 // Dev fallback: platform-appropriate Python interpreter
 const FLASK_VENV = IS_WIN
@@ -123,18 +123,16 @@ fs.writeFileSync(SPLASH_HTML, `<!DOCTYPE html><html><head>
   </div>
 </body></html>`);
 
-// ── Kill Flask process tree (handles PyInstaller onefile child processes) ──
+// ── Kill Flask process tree ───────────────────────────────────────────────
 function killFlask() {
   const pid = flaskProcess ? flaskProcess.pid : null;
   flaskProcess = null;
   if (IS_WIN) {
-    // Windows: taskkill kills the process tree
     if (pid) {
       try { spawn("taskkill", ["/F", "/T", "/PID", String(pid)], { windowsHide: true }); } catch(e) {}
     }
     try { spawn("taskkill", ["/F", "/IM", "TRADRS_Predictions_Markets_Algo.exe"], { windowsHide: true }); } catch(e) {}
   } else {
-    // macOS/Linux: kill process group
     if (pid) {
       try { process.kill(-pid, "SIGKILL"); } catch(e) {}
       try { spawn("kill", ["-9", String(pid)]); } catch(e) {}
@@ -149,28 +147,45 @@ ipcMain.on("win-maximize", () => {
   if (!mainWindow) return;
   mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
 });
-ipcMain.on("win-close",    () => { if (mainWindow) mainWindow.close(); });
-ipcMain.on("win-shutdown", () => {
-  killFlask();
-  app.quit();
-});
-ipcMain.on("win-restart",  () => {
+ipcMain.on("win-close",   () => { if (mainWindow) mainWindow.close(); });
+ipcMain.on("win-restart", () => {
   killFlask();
   app.relaunch();
   app.exit(0);
 });
 
-// ── Auto-updater IPC (packaged only) ─────────────────────────────────────
+// ── Auto-updater ──────────────────────────────────────────────────────────
 ipcMain.on("updater-check",       () => autoUpdater && autoUpdater.checkForUpdates());
 ipcMain.on("updater-install-now", () => autoUpdater && autoUpdater.quitAndInstall(false, true));
 
-if (autoUpdater) {
+function checkForUpdates() {
+  if (!autoUpdater) return;
   autoUpdater.autoDownload        = true;
   autoUpdater.autoInstallOnAppQuit = false;
-  autoUpdater.on("update-available",  (info)     => { if (mainWindow) mainWindow.webContents.send("update-available",  info); });
-  autoUpdater.on("download-progress", (progress) => { if (mainWindow) mainWindow.webContents.send("update-progress",  progress); });
-  autoUpdater.on("update-downloaded", (info)     => { if (mainWindow) mainWindow.webContents.send("update-downloaded", info); });
-  autoUpdater.on("error",             (err)      => { if (mainWindow) mainWindow.webContents.send("update-error",      err.message); });
+
+  autoUpdater.on("update-available", () => {
+    dialog.showMessageBox(mainWindow, {
+      type: "info",
+      title: "Update Available",
+      message: "A new version of TRADRS is downloading in the background. It will install when you quit the app.",
+      buttons: ["OK"],
+    });
+  });
+
+  autoUpdater.on("update-downloaded", () => {
+    dialog.showMessageBox(mainWindow, {
+      type: "info",
+      title: "Update Ready",
+      message: "Update downloaded. Restart now to apply it?",
+      buttons: ["Restart Now", "Later"],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) autoUpdater.quitAndInstall();
+    });
+  });
+
+  autoUpdater.on("error", (err) => console.error("Auto-updater error:", err.message));
+  autoUpdater.checkForUpdates().catch(() => {});
 }
 
 // ── Poll until Flask answers ──────────────────────────────────────────────
@@ -200,7 +215,9 @@ function createSplash() {
 }
 
 // ── Create main window ────────────────────────────────────────────────────
-const APP_ICON = path.join(__dirname, "assets", "icon.ico");
+const APP_ICON = IS_MAC
+  ? path.join(__dirname, "assets", "icon.icns")
+  : path.join(__dirname, "assets", "icon.ico");
 
 function createMain() {
   mainWindow = new BrowserWindow({
@@ -222,8 +239,7 @@ function createMain() {
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
     mainWindow.focus();
-    // Check for updates 5s after window is shown (only in packaged app)
-    if (app.isPackaged && autoUpdater) setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+    if (app.isPackaged) checkForUpdates();
   });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url); return { action: "deny" };
@@ -237,9 +253,9 @@ function createMain() {
 // ── Boot ──────────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
   if (Menu) Menu.setApplicationMenu(null);
+  if (IS_MAC && app.dock) app.dock.setIcon(path.join(__dirname, "assets", "icon.png"));
   const splash = createSplash();
 
-  // Check if Flask is already running — always show splash for at least 1.8s
   const splashStart = Date.now();
   function closeSplashAndOpen() {
     const elapsed = Date.now() - splashStart;
@@ -253,7 +269,6 @@ app.whenReady().then(() => {
       return;
     }
 
-    // Need to spawn Flask
     if (!fs.existsSync(SPAWN_CMD) || (!(USE_EXE || USE_BIN) && !fs.existsSync(FLASK_PY))) {
       dialog.showErrorBox("TRADRS — Missing Files",
         "Could not find the dashboard executable.\n\nExpected:\n" + SPAWN_CMD);
@@ -264,6 +279,7 @@ app.whenReady().then(() => {
       cwd: FLASK_CWD,
       env: { ...process.env, PYTHONUNBUFFERED: "1" },
       windowsHide: true,
+      detached: !IS_WIN,
     });
     flaskProcess.on("error", (e) => console.error("flask spawn:", e.message));
 
