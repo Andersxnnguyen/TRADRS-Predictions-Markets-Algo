@@ -1,0 +1,5 @@
+process.type: undefined
+resolve electron: C:\Users\danbe\Downloads\kalshi-trader-app\kalshi-trader-app\node_modules\electron\index.js
+_resolveFilename electron -> C:\Users\danbe\Downloads\kalshi-trader-app\kalshi-trader-app\node_modules\electron\index.js
+typeof e: string
+e value: les\electron\dist\electron.exe

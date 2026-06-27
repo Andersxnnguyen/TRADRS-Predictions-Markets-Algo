@@ -147,7 +147,8 @@ ipcMain.on("win-maximize", () => {
   if (!mainWindow) return;
   mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
 });
-ipcMain.on("win-close",   () => { if (mainWindow) mainWindow.close(); });
+ipcMain.on("win-close",    () => { if (mainWindow) mainWindow.close(); });
+ipcMain.on("win-shutdown", () => { killFlask(); app.quit(); });
 ipcMain.on("win-restart", () => {
   killFlask();
   app.relaunch();
@@ -163,28 +164,23 @@ function checkForUpdates() {
   autoUpdater.autoDownload        = true;
   autoUpdater.autoInstallOnAppQuit = false;
 
-  autoUpdater.on("update-available", () => {
-    dialog.showMessageBox(mainWindow, {
-      type: "info",
-      title: "Update Available",
-      message: "A new version of TRADRS is downloading in the background. It will install when you quit the app.",
-      buttons: ["OK"],
-    });
+  autoUpdater.on("update-available", (info) => {
+    if (mainWindow) mainWindow.webContents.send("update-available", info);
   });
 
-  autoUpdater.on("update-downloaded", () => {
-    dialog.showMessageBox(mainWindow, {
-      type: "info",
-      title: "Update Ready",
-      message: "Update downloaded. Restart now to apply it?",
-      buttons: ["Restart Now", "Later"],
-      defaultId: 0,
-    }).then(({ response }) => {
-      if (response === 0) autoUpdater.quitAndInstall();
-    });
+  autoUpdater.on("download-progress", (progress) => {
+    if (mainWindow) mainWindow.webContents.send("update-progress", progress);
   });
 
-  autoUpdater.on("error", (err) => console.error("Auto-updater error:", err.message));
+  autoUpdater.on("update-downloaded", (info) => {
+    if (mainWindow) mainWindow.webContents.send("update-downloaded", info);
+  });
+
+  autoUpdater.on("error", (err) => {
+    console.error("Auto-updater error:", err.message);
+    if (mainWindow) mainWindow.webContents.send("update-error", err.message);
+  });
+
   autoUpdater.checkForUpdates().catch(() => {});
 }
 

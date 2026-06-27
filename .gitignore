@@ -2,3 +2,13 @@ node_modules/
 dist/
 _splash.html
 *.log
+*.pem
+*.key
+*.p12
+*.pfx
+diag*.txt
+eerr.txt
+eout.txt
+stderr.txt
+stdout.txt
+test_err.txt

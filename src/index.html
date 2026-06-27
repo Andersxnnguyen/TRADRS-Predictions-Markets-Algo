@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalshi Trader</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- ═══ Title Bar (macOS style drag region) ═══ -->
+  <div id="titlebar">
+    <div class="titlebar-drag">
+      <span class="titlebar-logo">◆ KALSHI TRADER</span>
+    </div>
+    <div class="titlebar-status" id="statusIndicator">
+      <span class="status-dot offline"></span>
+      <span class="status-text">Idle</span>
+    </div>
+  </div>
+
+  <!-- ═══ Main Layout ═══ -->
+  <div id="app">
+    <!-- ── Sidebar ── -->
+    <nav id="sidebar">
+      <div class="nav-section">
+        <button class="nav-btn active" data-view="dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-btn" data-view="scanner">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span>Scanner</span>
+        </button>
+        <button class="nav-btn" data-view="backtest">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+          <span>Backtest</span>
+        </button>
+        <button class="nav-btn" data-view="logs">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span>Logs</span>
+        </button>
+      </div>
+      <div class="nav-section nav-bottom">
+        <button class="nav-btn" data-view="settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <span>Settings</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ── Content Area ── -->
+    <main id="content">
+
+      <!-- ═══ DASHBOARD VIEW ═══ -->
+      <section class="view active" id="view-dashboard">
+        <div class="view-header">
+          <h1>Dashboard</h1>
+          <div class="env-badge" id="envBadge">DEMO</div>
+        </div>
+
+        <!-- Status Cards -->
+        <div class="card-grid">
+          <div class="stat-card">
+            <div class="stat-label">Python</div>
+            <div class="stat-value" id="statPython">Checking...</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Bot Status</div>
+            <div class="stat-value" id="statBot">
+              <span class="status-dot offline"></span> Idle
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">API Key</div>
+            <div class="stat-value" id="statApiKey">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Private Key</div>
+            <div class="stat-value" id="statPem">—</div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-header">
+          <h2>Quick Actions</h2>
+        </div>
+        <div class="action-grid">
+          <button class="action-card" id="btnQuickScan">
+            <div class="action-icon scan-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            <div class="action-text">
+              <strong>Run Scanner</strong>
+              <span>Read-only market scan</span>
+            </div>
+          </button>
+          <button class="action-card" id="btnQuickDiagnose">
+            <div class="action-icon diag-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+            </div>
+            <div class="action-text">
+              <strong>Diagnose</strong>
+              <span>Raw market prices</span>
+            </div>
+          </button>
+          <button class="action-card caution" id="btnQuickTrade">
+            <div class="action-icon trade-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <div class="action-text">
+              <strong>Live Trade</strong>
+              <span>Auto-execute orders</span>
+            </div>
+          </button>
+          <button class="action-card" id="btnQuickBacktest">
+            <div class="action-icon bt-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+            </div>
+            <div class="action-text">
+              <strong>Backtest</strong>
+              <span>Test on historical data</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Strategies Reference -->
+        <div class="section-header"><h2>Strategies</h2></div>
+        <div class="strat-grid">
+          <div class="strat-card">
+            <div class="strat-name">SpreadGap</div>
+            <div class="strat-desc">YES + NO bid &lt; $0.97 — pricing gap between sides, 3-12h window</div>
+            <div class="strat-risk low-med">Low–Med</div>
+          </div>
+          <div class="strat-card">
+            <div class="strat-name">Momentum</div>
+            <div class="strat-desc">High-volume markets trending strongly, 48h+ to expiry</div>
+            <div class="strat-risk med">Med</div>
+          </div>
+          <div class="strat-card">
+            <div class="strat-name">Inplay</div>
+            <div class="strat-desc">Live games closing within 90 min, strong favorites</div>
+            <div class="strat-risk med-high">Med–High</div>
+          </div>
+          <div class="strat-card disabled">
+            <div class="strat-name">NearExpiry <span class="tag-disabled">DISABLED</span></div>
+            <div class="strat-desc">Insufficient upside — avg $0.06/trade on backtest</div>
+            <div class="strat-risk">—</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SCANNER VIEW ═══ -->
+      <section class="view" id="view-scanner">
+        <div class="view-header">
+          <h1>Market Scanner</h1>
+          <div class="header-actions">
+            <button class="btn btn-primary" id="btnStartScan">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+              Start Scanner
+            </button>
+            <button class="btn btn-danger hidden" id="btnStopScan">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+              Stop
+            </button>
+          </div>
+        </div>
+        <div class="terminal-output" id="scannerOutput">
+          <div class="terminal-placeholder">
+            Press <kbd>Start Scanner</kbd> to begin scanning Kalshi markets for signals.
+            <br><br>The scanner runs every 30 seconds and checks all active strategies.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ BACKTEST VIEW ═══ -->
+      <section class="view" id="view-backtest">
+        <div class="view-header">
+          <h1>Backtester</h1>
+        </div>
+        <div class="bt-controls">
+          <div class="control-group">
+            <label>Markets to Test</label>
+            <div class="btn-group">
+              <button class="btn btn-sm active" data-markets="100">100</button>
+              <button class="btn btn-sm" data-markets="300">300</button>
+              <button class="btn btn-sm" data-markets="5">5 (debug)</button>
+            </div>
+          </div>
+          <div class="control-group">
+            <label>Options</label>
+            <div class="check-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="btSave" checked> Save Excel
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="btVerbose"> Verbose
+              </label>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btnRunBacktest">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+            Run Backtest
+          </button>
+          <button class="btn btn-danger hidden" id="btnStopBacktest">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+            Stop
+          </button>
+        </div>
+        <div class="terminal-output" id="backtestOutput">
+          <div class="terminal-placeholder">
+            Configure and run a backtest to evaluate strategy performance on historical data.
+            <br><br>Uses candlestick data with look-ahead bias elimination.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ LOGS VIEW ═══ -->
+      <section class="view" id="view-logs">
+        <div class="view-header">
+          <h1>Activity Log</h1>
+          <div class="header-actions">
+            <button class="btn btn-secondary" id="btnRefreshLog">Refresh</button>
+          </div>
+        </div>
+        <div class="terminal-output log-viewer" id="logOutput">
+          <div class="terminal-placeholder">Click Refresh to load the latest log entries.</div>
+        </div>
+      </section>
+
+      <!-- ═══ SETTINGS VIEW ═══ -->
+      <section class="view" id="view-settings">
+        <div class="view-header">
+          <h1>Configuration</h1>
+          <div class="header-actions">
+            <button class="btn btn-primary" id="btnSaveConfig">Save Changes</button>
+          </div>
+        </div>
+        <div class="settings-body">
+          <!-- Auth -->
+          <div class="settings-section">
+            <h3>Authentication</h3>
+            <div class="field-row">
+              <label>API Key ID</label>
+              <input type="text" id="cfgApiKey" class="field-input mono" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+            </div>
+            <div class="field-row">
+              <label>Private Key Path</label>
+              <input type="text" id="cfgPemPath" class="field-input mono" value="kalshi_private.pem">
+            </div>
+          </div>
+
+          <!-- Environment -->
+          <div class="settings-section">
+            <h3>Environment</h3>
+            <div class="field-row">
+              <label>Mode</label>
+              <div class="toggle-group">
+                <button class="toggle-btn active" id="toggleDemo" data-val="true">Demo (Paper)</button>
+                <button class="toggle-btn" id="toggleLive" data-val="false">Live ($)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scanner -->
+          <div class="settings-section">
+            <h3>Scanner Settings</h3>
+            <div class="field-grid">
+              <div class="field-row">
+                <label>Scan Interval (sec)</label>
+                <input type="number" id="cfgScanInterval" class="field-input" value="30" min="10" max="300">
+              </div>
+              <div class="field-row">
+                <label>Max Markets / Scan</label>
+                <input type="number" id="cfgMaxMarkets" class="field-input" value="200" min="10" max="1000">
+              </div>
+              <div class="field-row">
+                <label>Min Volume</label>
+                <input type="number" id="cfgMinVolume" class="field-input" value="50" min="0">
+              </div>
+              <div class="field-row">
+                <label>Momentum Min Volume</label>
+                <input type="number" id="cfgMomentumVol" class="field-input" value="200" min="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Thresholds -->
+          <div class="settings-section">
+            <h3>Strategy Thresholds</h3>
+            <div class="field-grid">
+              <div class="field-row">
+                <label>Spread Gap Threshold</label>
+                <input type="number" id="cfgSpreadGap" class="field-input" value="0.97" step="0.01" min="0.90" max="1.00">
+              </div>
+              <div class="field-row">
+                <label>Near Expiry Hours</label>
+                <input type="number" id="cfgNearExpiry" class="field-input" value="6" min="1" max="48">
+              </div>
+            </div>
+          </div>
+
+          <!-- Trade Execution -->
+          <div class="settings-section">
+            <h3>Trade Execution</h3>
+            <div class="field-grid">
+              <div class="field-row">
+                <label>Auto Trade</label>
+                <div class="toggle-group">
+                  <button class="toggle-btn active" id="toggleAutoOff" data-val="false">Off</button>
+                  <button class="toggle-btn" id="toggleAutoOn" data-val="true">On</button>
+                </div>
+              </div>
+              <div class="field-row">
+                <label>Max Contracts / Trade</label>
+                <input type="number" id="cfgMaxContracts" class="field-input" value="10" min="1" max="100">
+              </div>
+              <div class="field-row">
+                <label>Max Daily Spend ($)</label>
+                <input type="number" id="cfgMaxSpend" class="field-input" value="50.00" step="10" min="1">
+              </div>
+              <div class="field-row">
+                <label>Order Type</label>
+                <div class="toggle-group">
+                  <button class="toggle-btn active" id="toggleLimit" data-val="limit">Limit</button>
+                  <button class="toggle-btn" id="toggleMarket" data-val="market">Market</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Setup -->
+          <div class="settings-section">
+            <h3>Setup</h3>
+            <button class="btn btn-secondary" id="btnInstallDeps">Install Python Dependencies</button>
+            <span class="setup-note" id="installStatus"></span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ═══ Trade Confirmation Modal ═══ -->
+  <div class="modal-overlay hidden" id="tradeModal">
+    <div class="modal">
+      <div class="modal-icon warn">⚠</div>
+      <h2>Enable Live Trading?</h2>
+      <p>Real orders will be placed on Kalshi. Make sure your <code>demo_mode</code> setting is correct.</p>
+      <div class="modal-env" id="modalEnvLabel">Current mode: DEMO</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+        <button class="btn btn-danger" id="modalConfirm">Start Trading</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

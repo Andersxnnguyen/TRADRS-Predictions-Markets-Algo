@@ -1,0 +1,5 @@
+requests
+cryptography
+tabulate
+colorama
+openpyxl
