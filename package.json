@@ -1,6 +1,6 @@
 {
   "name": "tradrs",
-  "version": "1.1.16",
+  "version": "1.1.17",
   "description": "TRADRS — Predictions Markets Algo Desktop App",
   "main": "main.js",
   "scripts": {
