@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   close:          () => ipcRenderer.send("win-close"),
   shutdown:       () => ipcRenderer.send("win-shutdown"),
   restart:        () => ipcRenderer.send("win-restart"),
+  restartFlask:   () => ipcRenderer.send("flask-restart"),
   checkForUpdate: () => ipcRenderer.send("updater-check"),
   installUpdate:  () => ipcRenderer.send("updater-install-now"),
   onUpdateAvailable: (cb) => ipcRenderer.on("update-available",  (_e, info)     => cb(info)),

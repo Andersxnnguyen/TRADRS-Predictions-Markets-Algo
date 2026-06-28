@@ -154,6 +154,21 @@ ipcMain.on("win-restart", () => {
   app.relaunch();
   app.exit(0);
 });
+ipcMain.on("flask-restart", () => {
+  killFlask();
+  setTimeout(() => {
+    flaskProcess = spawn(SPAWN_CMD, SPAWN_ARGS, {
+      cwd: FLASK_CWD,
+      env: { ...process.env, PYTHONUNBUFFERED: "1" },
+      windowsHide: true,
+      detached: !IS_WIN,
+    });
+    flaskProcess.on("error", (e) => console.error("flask restart spawn:", e.message));
+    waitForFlask(20000, (err) => {
+      if (!err && mainWindow) mainWindow.webContents.reload();
+    });
+  }, 1000);
+});
 
 // ── Auto-updater ──────────────────────────────────────────────────────────
 ipcMain.on("updater-check",       () => autoUpdater && autoUpdater.checkForUpdates());
